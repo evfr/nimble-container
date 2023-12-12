@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    image: node:14
+    volumes:
+      # - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./instance.txt:/usr/src/app/instance.txt  # Mount the instance file
+    environment:
+      - INSTANCE_NUMBER=${INSTANCE_NUMBER:-1}
+    command: sh -c 'node -e "console.log(process.env.INSTANCE_NUMBER)" && node server.js'
+    networks:
+      - webnet
+    deploy:
+      replicas: ${NUM_SERVERS:-3}
+      restart_policy:
+        condition: on-failure
+
+  lb:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    #   - ./instance.txt:/usr/src/app/instance.txt  # Mount the instance file
+    networks:
+      - webnet
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+networks:
+  webnet:
